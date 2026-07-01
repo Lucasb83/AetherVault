@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: 250 248 243;
+  --color-bg-soft: 243 240 232;
+  --color-bg-card: 255 255 255;
+
+  --color-accent: 13 122 122;
+  --color-accent-glow: 15 150 150;
+  --color-accent-soft: 227 242 240;
+
+  --color-ink: 28 28 26;
+  --color-ink-dim: 92 90 82;
+  --color-ink-faint: 154 151 140;
+
+  --color-karma-bg: 236 233 224;
+  --color-karma-text: 61 59 53;
+
+  --color-line: 28 28 26;
+  --color-line-opacity: 0.08;
+}
+
+.dark {
+  --color-bg: 21 22 26;
+  --color-bg-soft: 27 28 33;
+  --color-bg-card: 31 32 37;
+
+  --color-accent: 42 179 179;
+  --color-accent-glow: 63 209 209;
+  --color-accent-soft: 42 179 179;
+
+  --color-ink: 236 235 230;
+  --color-ink-dim: 168 167 159;
+  --color-ink-faint: 110 109 102;
+
+  --color-karma-bg: 38 40 48;
+  --color-karma-text: 207 206 202;
+
+  --color-line: 255 255 255;
+  --color-line-opacity: 0.08;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-ink));
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+::selection {
+  background-color: rgb(var(--color-accent));
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgb(var(--color-bg));
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-line) / var(--color-line-opacity));
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--color-accent));
+}
+
+/* Tipografía de contenido MDX */
+.prose-custom {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: rgb(var(--color-ink));
+}
+.prose-custom h2 {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 1.9rem;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  color: rgb(var(--color-ink));
+  letter-spacing: -0.01em;
+}
+.prose-custom h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 1.4rem;
+  margin-top: 2.2rem;
+  margin-bottom: 0.8rem;
+  color: rgb(var(--color-ink));
+}
+.prose-custom p {
+  margin-bottom: 1.4rem;
+}
+.prose-custom a {
+  color: rgb(var(--color-accent));
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--color-accent-soft));
+  text-underline-offset: 3px;
+}
+.prose-custom a:hover {
+  text-decoration-color: rgb(var(--color-accent));
+}
+.prose-custom blockquote {
+  border-left: 3px solid rgb(var(--color-accent));
+  padding-left: 1.2rem;
+  margin: 1.8rem 0;
+  font-style: italic;
+  color: rgb(var(--color-ink-dim));
+}
+.prose-custom code {
+  background: rgb(var(--color-bg-soft));
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: rgb(var(--color-accent-glow));
+}
+.prose-custom pre {
+  background: rgb(var(--color-bg-soft));
+  border: 1px solid rgb(var(--color-line) / var(--color-line-opacity));
+  border-radius: 10px;
+  padding: 1.2rem;
+  overflow-x: auto;
+  margin: 1.8rem 0;
+}
+.prose-custom pre code {
+  background: none;
+  padding: 0;
+  color: rgb(var(--color-ink));
+}
+.prose-custom img {
+  border-radius: 12px;
+  margin: 2rem 0;
+}
+.prose-custom ul,
+.prose-custom ol {
+  margin: 1.2rem 0 1.2rem 1.5rem;
+}
+.prose-custom li {
+  margin-bottom: 0.5rem;
+}
+.prose-custom hr {
+  border-color: rgb(var(--color-line) / var(--color-line-opacity));
+  margin: 3rem 0;
+}
