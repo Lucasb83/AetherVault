@@ -1,20 +1,25 @@
 import Fuse from "fuse.js";
-import { PostMeta } from "./posts";
+
+export interface PostMeta {
+  slug: string;
+  title: string;
+  date?: string | Date;
+  excerpt?: string;
+  coverImage?: string | null;
+  readingTime?: number | string;
+  tags?: string[];
+  [key: string]: any;
+}
 
 export function createSearchIndex(posts: PostMeta[]) {
   return new Fuse(posts, {
-    keys: [
-      { name: "title", weight: 0.5 },
-      { name: "excerpt", weight: 0.3 },
-      { name: "tags", weight: 0.2 },
-    ],
-    threshold: 0.35,
-    ignoreLocation: true,
+    keys: ["title", "excerpt", "tags"],
+    threshold: 0.3,
   });
 }
 
-export function searchPosts(posts: PostMeta[], query: string): PostMeta[] {
-  if (!query.trim()) return posts;
-  const fuse = createSearchIndex(posts);
-  return fuse.search(query).map((r) => r.item);
+export function searchPosts(posts: PostMeta[], query: string) {
+  if (!query) return posts;
+  const index = createSearchIndex(posts);
+  return index.search(query).map((result) => result.item);
 }
