@@ -36,13 +36,34 @@ export default function CreatePostPage() {
     },
   });
 
+  // Auxiliares para procesar los datos antes de enviar
+  const generateSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  const calculateReadingTime = (text: string) => {
+    const wordsPerMinute = 200;
+    const noOfWords = text.split(/\s+/).length;
+    return Math.max(1, Math.ceil(noOfWords / wordsPerMinute));
+  };
+
+  const generateExcerpt = (text: string) => {
+    if (text.length <= 160) return text;
+    return text.substring(0, 157) + '...';
+  };
+
   // Función para guardar en Supabase
   const handlePublish = async () => {
     if (!editor) return;
-    const content = editor.getHTML();
+    const htmlContent = editor.getHTML();
+    const textContent = editor.getText();
     
-    // Evitar envíos vacíos
-    if (!title.trim() && (editor.isEmpty || content === '<p></p>')) return;
+    if (!title.trim() && (editor.isEmpty || htmlContent === '<p></p>')) return;
     
     setIsPublishing(true);
     setPublishStatus('idle');
@@ -50,14 +71,25 @@ export default function CreatePostPage() {
     try {
       const supabase = createClient();
       
+      const cleanTitle = title.trim() || 'Untitled Draft';
+      const baseSlug = generateSlug(cleanTitle) || 'untitled';
+      const uniqueSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
+      
+      const readingTime = calculateReadingTime(textContent);
+      const excerpt = generateExcerpt(textContent);
+
       const { data, error } = await supabase
         .from('posts')
         .insert([
           { 
-            title: title || 'Untitled Draft', 
-            content: content,
+            title: cleanTitle, 
+            slug: uniqueSlug,
+            content: htmlContent,
+            excerpt: excerpt || null,
             status: 'DRAFT',
-            author: 'Lucas Bianchi' 
+            author: 'Lucas Bianchi',
+            reading_time: readingTime,
+            tags: ['AI', 'Rationality'] // Tags por defecto iniciales
           }
         ]);
 
@@ -65,7 +97,6 @@ export default function CreatePostPage() {
 
       setPublishStatus('success');
       
-      // Limpiar el formulario después del éxito
       setTimeout(() => {
         setPublishStatus('idle');
         setTitle('');
@@ -83,7 +114,6 @@ export default function CreatePostPage() {
   return (
     <div className="min-h-screen bg-[#FDFCF8] text-[#222222] font-sans flex flex-col selection:bg-[#639A67] selection:text-white">
       
-      {/* 1. Cabecera Superior */}
       <header className="sticky top-0 z-50 bg-[#FDFCF8] border-b border-[#E0E0E0] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button className="p-2 hover:bg-gray-100 rounded-md transition-colors">
@@ -108,13 +138,10 @@ export default function CreatePostPage() {
         </div>
       </header>
 
-      {/* Contenedor Principal */}
       <main className="flex-1 flex w-full max-w-7xl mx-auto relative">
         
-        {/* 2. Área de Trabajo Central (Editor) */}
         <div className="flex-1 px-8 py-16 max-w-3xl mx-auto w-full relative">
           
-          {/* Alertas de estado */}
           {publishStatus === 'success' && (
             <div className="absolute top-4 left-8 right-8 bg-[#639A67] text-white px-4 py-2 rounded shadow-sm text-sm font-medium text-center transition-all">
               Draft saved successfully to Supabase!
@@ -122,7 +149,7 @@ export default function CreatePostPage() {
           )}
           {publishStatus === 'error' && (
             <div className="absolute top-4 left-8 right-8 bg-red-500 text-white px-4 py-2 rounded shadow-sm text-sm font-medium text-center transition-all">
-              Error saving post. Check console.
+              Error saving post. Check database fields.
             </div>
           )}
 
@@ -140,7 +167,6 @@ export default function CreatePostPage() {
             <button className="hover:text-[#222222] transition-colors">+ Linkpost</button>
           </div>
 
-          {/* Instancia del Editor Tiptap */}
           <style dangerouslySetInnerHTML={{__html: `
             .is-editor-empty:first-child::before {
               content: attr(data-placeholder);
@@ -154,7 +180,6 @@ export default function CreatePostPage() {
 
         </div>
 
-        {/* 3. Barra de Herramientas Flotante */}
         <div className="fixed right-8 top-32 flex flex-col gap-3 z-40">
           <button 
             onClick={handlePublish}
@@ -176,7 +201,6 @@ export default function CreatePostPage() {
           </button>
         </div>
 
-        {/* 4. Panel Lateral de Configuración (Settings) */}
         {isSettingsOpen && (
           <aside className="w-80 bg-white border-l border-[#E0E0E0] min-h-full flex flex-col shadow-sm fixed right-0 top-[65px] h-[calc(100vh-65px)] overflow-y-auto z-30 pt-4">
             <div className="border-b border-[#E0E0E0]">

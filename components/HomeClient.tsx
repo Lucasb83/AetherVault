@@ -1,114 +1,93 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import PostCard, { PostMeta } from "./PostCard";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
-import PostCard from "./PostCard";
-import DynamicBackground from "./DynamicBackground";
 import { searchPosts } from "@/lib/search";
+import { createClient } from "@/lib/supabase";
+import { Loader2 } from "lucide-react";
 
-export interface PostMeta {
-  slug: string;
-  title: string;
-  date?: string;
-  excerpt?: string;
-  coverImage?: string;
-  [key: string]: any; // Para que no moleste si hay otras propiedades
-}
-
-export default function HomeClient({
-  posts,
-  tags,
-}: {
-  posts: PostMeta[];
-  tags: { tag: string; count: number }[];
-}) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"recent" | "oldest" | "random">("recent");
+export default function HomeClient() {
+  const [posts, setPosts] = useState<PostMeta[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    let result = query ? searchPosts(posts, query) : posts;
-    if (activeTag) result = result.filter((p) => p.tags.includes(activeTag));
+  useEffect(() => {
+    async function fetchPosts() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("posts")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-    if (sortBy === "oldest") result = [...result].reverse();
-    if (sortBy === "random") result = [...result].sort(() => Math.random() - 0.5);
+        if (error) throw error;
 
-    return result;
-  }, [posts, query, activeTag, sortBy]);
+        const formattedPosts: PostMeta[] = (data || []).map((p: any) => ({
+          slug: p.slug,
+          title: p.title,
+          date: p.created_at,
+          excerpt: p.excerpt,
+          coverImage: p.cover_image,
+          readingTime: p.reading_time,
+          tags: p.tags,
+        }));
 
-  const defaultBg = posts[0]?.coverImage || "/images/covers/default.svg";
+        setPosts(formattedPosts);
+      } catch (err) {
+        console.error("Error cargando artículos:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPosts();
+  }, []);
+
+  const filteredPosts = searchPosts(posts, searchQuery);
 
   return (
-    <>
-      <DynamicBackground imageSrc={hoveredImage || defaultBg} />
+    <div className="min-h-screen bg-bg text-ink font-sans flex flex-col antialiased selection:bg-accent selection:text-white">
+      <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
-      <Header onToggleSidebar={() => setSidebarOpen((s) => !s)} onSearch={setQuery} />
-
-      <Sidebar
-        open={sidebarOpen}
-        tags={tags}
-        activeTag={activeTag}
-        onSelectTag={setActiveTag}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-      />
-
-      <main
-        className={`max-w-3xl mx-auto px-4 sm:px-6 py-10 transition-all duration-300 ${
-          sidebarOpen ? "sm:ml-64" : ""
-        }`}
-      >
-        <div className="mb-8 animate-fade-in">
-          <h1 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-ink mb-1">
-            AetherVault
-          </h1>
-          <p className="text-ink-dim text-sm">
-            Notas, ideas y exploraciones. Pasá el cursor sobre un post para ver su mundo.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 mb-2">
-          <SortTab active={sortBy === "recent"} onClick={() => setSortBy("recent")} label="Recientes" />
-          <SortTab active={sortBy === "oldest"} onClick={() => setSortBy("oldest")} label="Antiguos" />
-          <SortTab active={sortBy === "random"} onClick={() => setSortBy("random")} label="Sorpréndeme" />
-        </div>
-
-        {filtered.length === 0 ? (
-          <p className="text-ink-faint italic py-8">No encontré nada con esos filtros.</p>
-        ) : (
-          <div className="mt-2">
-            {filtered.map((post, i) => (
-              <PostCard key={post.slug} post={post} index={i} onHover={setHoveredImage} />
-            ))}
+      <div className="flex-1 max-w-7xl w-full mx-auto flex relative px-4 sm:px-6 lg:px-8 gap-8">
+        
+        <main className="flex-1 py-12 max-w-3xl min-w-0">
+          <div className="mb-8 border-b border-line pb-2 flex items-center justify-between">
+            <h1 className="font-serif text-2xl font-medium tracking-tight">Investigaciones Recientes</h1>
+            <span className="text-xs text-ink-faint font-mono uppercase tracking-wider">
+              {filteredPosts.length} {filteredPosts.length === 1 ? 'artículo' : 'artículos'}
+            </span>
           </div>
-        )}
-      </main>
-    </>
-  );
-}
 
-function SortTab({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`text-sm px-4 py-1.5 rounded-full transition-colors font-medium ${
-        active
-          ? "bg-accent text-white"
-          : "bg-bg-card border border-line text-ink-dim hover:text-ink"
-      }`}
-    >
-      {label}
-    </button>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-24 text-ink-faint gap-3">
+              <Loader2 className="w-6 h-6 animate-spin text-accent" />
+              <span className="text-sm font-mono">Sincronizando con el archivo...</span>
+            </div>
+          ) : filteredPosts.length > 0 ? (
+            <div className="flex flex-col">
+              {filteredPosts.map((post: PostMeta, index: number) => (
+                <PostCard
+                  key={post.slug}
+                  post={post}
+                  index={index}
+                  onHover={setHoveredImage}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-24 border border-dashed border-line rounded-lg bg-bg-card">
+              <p className="text-sm text-ink-dim font-medium">No se encontraron artículos coincidentes.</p>
+              <p className="text-xs text-ink-faint mt-1">Intenta con otra palabra clave o etiqueta.</p>
+            </div>
+          )}
+        </main>
+
+        <Sidebar hoveredImage={hoveredImage} />
+      </div>
+    </div>
   );
 }
