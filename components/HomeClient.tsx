@@ -5,8 +5,16 @@ import Header from "./Header";
 import Sidebar from "./Sidebar";
 import PostCard from "./PostCard";
 import DynamicBackground from "./DynamicBackground";
-import { PostMeta } from "@/lib/posts";
 import { searchPosts } from "@/lib/search";
+
+export interface PostMeta {
+  slug: string;
+  title: string;
+  date?: string;
+  excerpt?: string;
+  coverImage?: string;
+  [key: string]: any; // Para que no moleste si hay otras propiedades
+}
 
 export default function HomeClient({
   posts,
